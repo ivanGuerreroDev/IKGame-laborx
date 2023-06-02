@@ -29,7 +29,7 @@ const web3Modal = new Web3Modal({
 });
 
 const MainLayout = ({ children }) => {
-  
+
   const globalAccount = useSelector((state) => state.auth.currentWallet);
   const globalWeb3 = useSelector((state) => state.auth.globalWeb3);
   const claimableAmount = useSelector((state) => state.auth.balance);
@@ -39,7 +39,7 @@ const MainLayout = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [web3Provider, setWeb3Provider] = useState({});
   const [compressedAddress, setCompressedAddress] = useState("");
-
+  const [fullAddress, setFullAddress] = useState("");
 
   const makeCompressedAccount = (accountStr) => {
     return (
@@ -48,7 +48,7 @@ const MainLayout = ({ children }) => {
       accountStr.substring(accountStr.length - 4, accountStr.length)
     );
   };
-  
+
   const onClickConnectWallet = async () => {
     try {
       const provider = await web3Modal.connect();
@@ -61,17 +61,18 @@ const MainLayout = ({ children }) => {
       dispatch(setConnectedChainId(chainId));
       console.log("chainId = ", chainId);
       console.log("typeof chainId = ", typeof chainId);
-
       if (accounts[0]) {
         console.log("accounts[0] = ", accounts[0]);
         setCompressedAddress(makeCompressedAccount(accounts[0]));
+        setFullAddress(accounts[0])
         setConnected(true);
         dispatch(setConnectedWalletAddress(accounts[0]));
-        
-        if(globalChainId === ETHEREUM_CHAIN_ID) 
-          NotificationManager.success("You've connected a wallet account. "+makeCompressedAccount(accounts[0]), "Success", 5000, () => {});
+
+        if (globalChainId === ETHEREUM_CHAIN_ID)
+          NotificationManager.success("You've connected a wallet account. " + makeCompressedAccount(accounts[0]), "Success", 5000, () => { });
       } else {
         setCompressedAddress("");
+        setFullAddress("")
         setConnected(false);
         dispatch(setConnectedChainId(undefined));
         dispatch(setConnectedWalletAddress(undefined));
@@ -97,6 +98,11 @@ const MainLayout = ({ children }) => {
     }
     setConnected(false);
   };
+
+  const copyAddress = () => {
+    navigator.clipboard.writeText(fullAddress);
+    NotificationManager.success("Address copied to clipboard!");
+  }
 
   useEffect(() => {
     if (web3Provider?.on) {
@@ -144,19 +150,25 @@ const MainLayout = ({ children }) => {
       <div id="header" className="section">
         <div className="page-container">
           <img className="logo" src="/assets/imgs/logo.png" alt="logo" />
-
-          <div className="btn">
+          <div className="walletConectionSection">
+            <div className="btn">
+              {
+                connected === false ?
+                  <div className="btn-text"
+                    style={{ userSelect: "none" }}
+                    onClick={() => onClickConnectWallet()}
+                  >Connect Wallet</div>
+                  :
+                  <div className="btn-text"
+                    style={{ userSelect: "none" }}
+                    onClick={() => onClickDisconnect()}
+                  >Disconnect</div>
+              }
+            </div>
             {
-              connected === false ?   
-              <div className="btn-text"
-                style={{ userSelect: "none" }}
-                onClick={() => onClickConnectWallet()}
-              >Connect Wallet</div>
-              :
-              <div className="btn-text"
-                style={{ userSelect: "none" }}
-                onClick={() => onClickDisconnect()}
-              >Disconnect</div>
+              connected && (
+                <p className="walletAdressText" onClick={copyAddress}>{compressedAddress}<span className="walletAddressHover">{fullAddress}</span></p>
+              )
             }
           </div>
         </div>
